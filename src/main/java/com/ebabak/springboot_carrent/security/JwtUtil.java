@@ -1,0 +1,84 @@
+package com.ebabak.springboot_carrent.security;
+
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+@Component
+public class JwtUtil {
+
+    @Value("${jwt.secret}")
+    private String secretKey;
+
+    @Value("${jwt.expiration}")
+    private long expirationMs;
+
+    private SecretKey signingKey;
+
+    @PostConstruct
+    public void init() {
+        this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    }
+
+    // Метод для створення JWT токена
+    public String generateToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", getUserRole(userDetails)); // додаємо роль користувача до токена
+
+        Date now = new Date();
+        Date expirationDate = new Date(now.getTime() + expirationMs);
+
+        return Jwts.builder()
+                .header().type("JWT").and()
+                .claims(claims)
+                .subject(userDetails.getUsername())
+                .issuedAt(now)
+                .expiration(expirationDate)
+                .signWith(signingKey)
+                .compact();
+    }
+
+    // Витягує ім'я користувача з токена
+    public String extractUsername(String token) {
+        return getClaims(token).getSubject();
+    }
+
+    // Перевіряє, чи токен валідний
+    public boolean validateToken(String token, UserDetails userDetails) {
+        try {
+            final String username = extractUsername(token);
+            return username.equals(userDetails.getUsername())
+                    && !getClaims(token).getExpiration().before(new Date());
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    // Повертає Claims із токена
+    private Claims getClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    // Витягує роль користувача (перша з колекції authorities)
+    private String getUserRole(UserDetails userDetails) {
+        return userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElse(null);
+    }
+}
