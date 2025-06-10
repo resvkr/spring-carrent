@@ -14,7 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.NoSuchElementException;
+
 
 @RestController
 @RequestMapping("/rentals")
@@ -46,8 +46,16 @@ public class RentalController {
     }
 
     @PostMapping("/return")
-    public ResponseEntity<Void> returnVehicle(@RequestParam String vehicleId, @RequestParam String userId) {
-        boolean success = rentalService.returnRental(vehicleId, userId);
-        return success ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    public ResponseEntity<Void> returnVehicle(@RequestBody RentalRequest rentalRequest,
+    @AuthenticationPrincipal UserDetails userDetails) {
+
+        String login = userDetails.getUsername();
+
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new UsernameNotFoundException("Użytkownik nie znaleziony: " + login));
+
+        rentalService.returnRental(rentalRequest.getVehicleId(), user.getId());
+
+        return ResponseEntity.noContent().build();
     }
 }

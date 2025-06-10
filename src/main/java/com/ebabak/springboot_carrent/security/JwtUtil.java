@@ -13,7 +13,9 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
@@ -31,10 +33,10 @@ public class JwtUtil {
         this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Метод для створення JWT токена
+
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", getUserRole(userDetails)); // додаємо роль користувача до токена
+        claims.put("role", getUserRoles(userDetails));
 
         Date now = new Date();
         Date expirationDate = new Date(now.getTime() + expirationMs);
@@ -74,11 +76,11 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    // Витягує роль користувача (перша з колекції authorities)
-    private String getUserRole(UserDetails userDetails) {
+    private List<String> getUserRoles (UserDetails
+                                               userDetails){
         return userDetails.getAuthorities().stream()
-                .findFirst()
                 .map(GrantedAuthority::getAuthority)
-                .orElse(null);
+                .collect(Collectors.toList());
     }
+
 }

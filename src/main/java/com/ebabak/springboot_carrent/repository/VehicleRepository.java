@@ -24,4 +24,5 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     @Query("SELECT v FROM Vehicle v WHERE v.deleted = false AND v.id IN " +
             "(SELECT r.vehicleId.id FROM Rental r WHERE r.returnDate IS NULL)")
     List<Vehicle> findRentedVehicles();
+
 }

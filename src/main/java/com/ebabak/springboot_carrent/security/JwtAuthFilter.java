@@ -1,5 +1,6 @@
 package com.ebabak.springboot_carrent.security;
 
+import com.ebabak.springboot_carrent.model.User;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -29,15 +30,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        String path = request.getServletPath();
+        if (path.startsWith("/api/auth/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
+        System.out.println("Authorization header: " + authHeader);
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7); // Витягуємо сам токен
+            String token = authHeader.substring(7);
             try {
                 String username = jwtUtil.extractUsername(token);
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    if (userDetails instanceof User user && !user.isEnabled()) {
+                        System.out.println("User is disabled.");
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        return;
+                    }
                     if (jwtUtil.validateToken(token, userDetails)) {
                         UsernamePasswordAuthenticationToken authToken =
                                 new UsernamePasswordAuthenticationToken(
@@ -52,7 +65,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
 
-        // Продовжуємо виконання фільтрів далі
         filterChain.doFilter(request, response);
     }
+
+
 }

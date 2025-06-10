@@ -61,5 +61,4 @@ public class VehicleController {
     public ResponseEntity<Boolean> isAvailable(@PathVariable String id) {
         return ResponseEntity.ok(vehicleService.isAvailable(id));
     }
-
 }
