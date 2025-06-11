@@ -72,10 +72,10 @@ public class UserServiceImpl implements UserService {
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
+        user.getRoles().clear();
         user.getRoles().add(role);
         userRepository.save(user);
     }
-
 
 
     @Override

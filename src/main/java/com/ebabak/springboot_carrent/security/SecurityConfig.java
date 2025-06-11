@@ -33,6 +33,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/payments/webhook").permitAll()
+                        .requestMatchers("/api/payments/success").permitAll()
+                        .requestMatchers("/api/payments/cancel").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/auth/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/vehicles").hasRole("ADMIN")
@@ -40,6 +43,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/vehicles/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
+
+
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

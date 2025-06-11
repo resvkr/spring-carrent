@@ -25,4 +25,7 @@ public class Rental {
 
     private String rentDate;
     private String returnDate;
+
+    @OneToOne(mappedBy = "rental")
+    private Payment payment;
 }
